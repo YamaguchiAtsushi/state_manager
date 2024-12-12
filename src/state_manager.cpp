@@ -47,6 +47,8 @@ public:
         waypoint_num_msg_.data = 0;
         waypoint_num_flag = 0;
         sub_waypoint_state_ = 0;
+        is_timer_start = false;
+
         // パラメータの取得
         pnh_.getParam("current_location", current_location_);
     }
@@ -71,6 +73,9 @@ private:
     std_msgs::Float32 robot_speed_msg;
     std_msgs::Bool goal_reached_msg_;
 
+    ros::Time start_;
+    ros::Time now_;
+
 
     double roll_, pitch_, yaw_;
     double theta_;
@@ -83,6 +88,7 @@ private:
     int goal_judge_;
     int waypoint_num_flag;
     int sub_waypoint_state_;
+    bool is_timer_start;
     std::string current_location_;  // 取得したパラメータを格納
 
     void timerCallback(const ros::TimerEvent&);
@@ -107,37 +113,53 @@ void StateManager::timerCallback(const ros::TimerEvent&) {
 }
 
 void StateManager::waypointManager(){
-    if(collision_state_ == 2 && goal_judge_ == 0){//goal_judge_ == 0はいらないかも
-        goal_judge_ = 0; //いらないかも
-        main_waypoint_.pose.position.x = sub_waypoint_.pose.position.x;
-        main_waypoint_.pose.position.y = sub_waypoint_.pose.position.y;
-        main_waypoint_.pose.position.z = sub_waypoint_.pose.position.z;
-        // waypoint_pub_.publish(sub_waypoint_);
-        ROS_INFO("PUBLISH SUB WAYPOINT");
-    }
+    //3秒停止するtimer
+    // if(collision_state_ == 2 && goal_judge_ == 0){//goal_judge_ == 0はいらないかも
 
-        std::cout << "goal_judge_" << goal_judge_ << std::endl;
-        std::cout << "waypoint_num_flag" << waypoint_num_flag << std::endl;
+    //     if(is_timer_start == false){
+    //         start_ = ros::Time::now();
+    //         is_timer_start = true;
+    //     }
+
+    //     now_ = ros::Time::now();
+    //     if (now_ - start_ > ros::Duration(3.0))
+    //     {
+    //         goal_judge_ = 0; //いらないかも
+    //         main_waypoint_.pose.position.x = sub_waypoint_.pose.position.x;
+    //         main_waypoint_.pose.position.y = sub_waypoint_.pose.position.y;
+    //         main_waypoint_.pose.position.z = sub_waypoint_.pose.position.z;
+    //         // waypoint_pub_.publish(sub_waypoint_);
+    //         ROS_INFO("PUBLISH SUB WAYPOINT");
+    //     }
+    // }
+    // else{
+    //     is_timer_start = false;
+    // }
+
+    //     std::cout << "goal_judge_" << goal_judge_ << std::endl;
+    //     std::cout << "waypoint_num_flag" << waypoint_num_flag << std::endl;
 
     if(goal_judge_ == 1 && waypoint_num_flag == 0){
+    // if(goal_judge_ == 1){
         waypoint_num_msg_.data += 1;
         std::cout << "waypoint_num_msg_.data" << waypoint_num_msg_.data << std::endl;
         std::cout << "waypoint_num_flag" << waypoint_num_flag << std::endl;
         std::cout << "goal_judge_" << goal_judge_ << std::endl;
 
-        waypoint_num_flag = 1;
+        waypoint_num_flag = 1;//ずっとこのif文内に入るのを防ぐ　いらないかも　waypointが更新されるので、goal_judgeがfalseになる
 
         goal_reached_msg_.data = true;
         std::cout << "bbbbb" << std::endl;
         // goal_reached_pub_.publish(goal_reached_msg_);
         // waypoint_num_pub_.publish(waypoint_num_msg_);
         // waypoint_pub_.publish(main_waypoint_);
-    }else{
+    }
+    if(goal_judge_ == 0){
         goal_reached_msg_.data = false;
         std::cout << "ccccc" << std::endl;
 
     }
-    if(goal_judge_ == 0 && waypoint_num_flag == 1){
+    if(goal_judge_ == 0){
         waypoint_num_flag = 0;
     }
         goal_reached_pub_.publish(goal_reached_msg_);
