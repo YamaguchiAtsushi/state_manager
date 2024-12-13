@@ -114,30 +114,33 @@ void StateManager::timerCallback(const ros::TimerEvent&) {
 
 void StateManager::waypointManager(){
     //3秒停止するtimer
-    // if(collision_state_ == 2 && goal_judge_ == 0){//goal_judge_ == 0はいらないかも
+    if(collision_state_ == 2 && goal_judge_ == 0){//goal_judge_ == 0はいらないかも
 
-    //     if(is_timer_start == false){
-    //         start_ = ros::Time::now();
-    //         is_timer_start = true;
-    //     }
+        if(is_timer_start == false){
+            start_ = ros::Time::now();
+            ROS_INFO("TIMER START");
+            is_timer_start = true;
+        }
 
-    //     now_ = ros::Time::now();
-    //     if (now_ - start_ > ros::Duration(3.0))
-    //     {
-    //         goal_judge_ = 0; //いらないかも
-    //         main_waypoint_.pose.position.x = sub_waypoint_.pose.position.x;
-    //         main_waypoint_.pose.position.y = sub_waypoint_.pose.position.y;
-    //         main_waypoint_.pose.position.z = sub_waypoint_.pose.position.z;
-    //         // waypoint_pub_.publish(sub_waypoint_);
-    //         ROS_INFO("PUBLISH SUB WAYPOINT");
-    //     }
-    // }
-    // else{
-    //     is_timer_start = false;
-    // }
+        now_ = ros::Time::now();
+        if (now_ - start_ > ros::Duration(3.0))
+        {
+            ROS_INFO("3sec PASSED");
+            goal_judge_ = 0; //いらないかも
+            main_waypoint_.pose.position.x = sub_waypoint_.pose.position.x;
+            main_waypoint_.pose.position.y = sub_waypoint_.pose.position.y;
+            main_waypoint_.pose.position.z = sub_waypoint_.pose.position.z;
+            // waypoint_pub_.publish(sub_waypoint_);
+            ROS_INFO("PUBLISH SUB WAYPOINT: (%f, %f)", main_waypoint_.pose.position.x, main_waypoint_.pose.position.y);
 
-    //     std::cout << "goal_judge_" << goal_judge_ << std::endl;
-    //     std::cout << "waypoint_num_flag" << waypoint_num_flag << std::endl;
+        }
+    }
+    else{
+        is_timer_start = false;
+    }
+
+        std::cout << "goal_judge_" << goal_judge_ << std::endl;
+        std::cout << "waypoint_num_flag" << waypoint_num_flag << std::endl;
 
     if(goal_judge_ == 1 && waypoint_num_flag == 0){
     // if(goal_judge_ == 1){
@@ -193,7 +196,7 @@ void StateManager::robotSpeedPub(){
         robot_speed_msg.data = 1.0;
     }
     else if(collision_state_ == 1){
-        robot_speed_msg.data = 0.3;
+        robot_speed_msg.data = 0.1;
     }
     else if(collision_state_ == 2){
         robot_speed_msg.data = 0.0;
@@ -245,7 +248,7 @@ int main(int argc, char** argv) {
 
     StateManager cm;
 
-    ros::Rate loop_rate(100);
+    ros::Rate loop_rate(10);
 
     while (ros::ok()) {
         ros::spinOnce();
