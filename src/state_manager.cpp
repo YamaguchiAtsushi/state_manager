@@ -19,6 +19,11 @@
 #include <sstream>
 #include <string>
 
+struct waypoint_data{
+    geometry_msgs::PoseStamped pose;
+    int state;
+};
+
 class StateManager {
 public:
     StateManager(){  // プライベートノードハンドルを初期化
@@ -47,6 +52,7 @@ public:
         waypoint_num_msg_.data = 0;
         waypoint_num_flag = 0;
         sub_waypoint_state_ = 0;
+        sub_waypoint_flag_ = 0;
         is_timer_start = false;
 
         // パラメータの取得
@@ -88,6 +94,7 @@ private:
     int goal_judge_;
     int waypoint_num_flag;
     int sub_waypoint_state_;
+    int sub_waypoint_flag_;
     bool is_timer_start;
     std::string current_location_;  // 取得したパラメータを格納
 
@@ -130,6 +137,7 @@ void StateManager::waypointManager(){
             main_waypoint_.pose.position.x = sub_waypoint_.pose.position.x;
             main_waypoint_.pose.position.y = sub_waypoint_.pose.position.y;
             main_waypoint_.pose.position.z = sub_waypoint_.pose.position.z;
+            sub_waypoint_flag_ = 1;//sub_waypointに向かっているときに、waypointが更新されるのを防ぐ
             // waypoint_pub_.publish(sub_waypoint_);
             ROS_INFO("PUBLISH SUB WAYPOINT: (%f, %f)", main_waypoint_.pose.position.x, main_waypoint_.pose.position.y);
 
@@ -144,7 +152,11 @@ void StateManager::waypointManager(){
 
     if(goal_judge_ == 1 && waypoint_num_flag == 0){
     // if(goal_judge_ == 1){
-        waypoint_num_msg_.data += 1;
+        if(sub_waypoint_flag_ == 0){//sub_waypointに向かっているときに、waypointが更新されるのを防ぐ
+            waypoint_num_msg_.data += 1;
+        }else{
+            sub_waypoint_flag_ = 0;//
+        }
         std::cout << "waypoint_num_msg_.data" << waypoint_num_msg_.data << std::endl;
         std::cout << "waypoint_num_flag" << waypoint_num_flag << std::endl;
         std::cout << "goal_judge_" << goal_judge_ << std::endl;
@@ -157,6 +169,7 @@ void StateManager::waypointManager(){
         // waypoint_num_pub_.publish(waypoint_num_msg_);
         // waypoint_pub_.publish(main_waypoint_);
     }
+    
     if(goal_judge_ == 0){
         goal_reached_msg_.data = false;
         std::cout << "ccccc" << std::endl;
