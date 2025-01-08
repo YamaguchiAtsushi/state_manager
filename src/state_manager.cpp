@@ -38,6 +38,7 @@ public:
         collision_state_sub_ = nh_.subscribe("collision_state", 1000, &StateManager::collisionStateCallback, this);
         goal_judge_sub_ = nh_.subscribe("goal_judge", 1000, &StateManager::goalJudgeCallback, this);
         sub_waypoint_state_sub_ = nh_.subscribe("sub_waypoint_state", 1000, &StateManager::subWaypointStateCallback, this);
+        waypoint_skip_flag_sub_ = nh_.subscribe("waypoint_skip_flag", 1000, &StateManager::waypointSkipFlagCallback, this);
         timer_callback_ = nh_.createTimer(ros::Duration(1.0), &StateManager::timerCallback, this);
 
         robot_x_ = 0.0;
@@ -54,16 +55,18 @@ public:
         sub_waypoint_state_ = 0;
         sub_waypoint_flag_ = 0;
         is_timer_start = false;
+        waypoint_skip_flag_ = 0;
+        waypoint_skip_ = 0;
 
         // パラメータの取得
-        pnh_.getParam("current_location", current_location_);
+        // pnh_.getParam("current_location", current_location_);
     }
 
 private:
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;  // プライベートノードハンドル
 
-    ros::Subscriber waypoint_sub_, waypoint_num_sub_, collision_state_sub_, goal_judge_sub_, main_waypoint_sub_, sub_waypoint_sub_, sub_waypoint_state_sub_;
+    ros::Subscriber waypoint_sub_, waypoint_num_sub_, collision_state_sub_, goal_judge_sub_, main_waypoint_sub_, sub_waypoint_sub_, sub_waypoint_state_sub_, waypoint_skip_flag_sub_;
     ros::Publisher marker_pub_, waypoint_pub_, waypoint_num_pub_, goal_reached_pub_, robot_speed_pub_;
     ros::Timer timer_callback_;
     ros::Time timer_start_;
@@ -95,6 +98,8 @@ private:
     int waypoint_num_flag;
     int sub_waypoint_state_;
     int sub_waypoint_flag_;
+    int waypoint_skip_flag_;
+    int waypoint_skip_;
     bool is_timer_start;
     std::string current_location_;  // 取得したパラメータを格納
 
@@ -105,6 +110,7 @@ private:
     void mainWaypointCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
     void subWaypointCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
     void subWaypointStateCallback(const std_msgs::Int16::ConstPtr& msg);
+    void waypointSkipFlagCallback(const std_msgs::Int16::ConstPtr& msg);
     void goalReachedCallback(const std_msgs::Bool::ConstPtr& msg);
     void collisionStateCallback(const std_msgs::Int16::ConstPtr& msg);
     void goalJudgeCallback(const std_msgs::Int16::ConstPtr& msg);
@@ -168,6 +174,16 @@ void StateManager::waypointManager(){
         // goal_reached_pub_.publish(goal_reached_msg_);
         // waypoint_num_pub_.publish(waypoint_num_msg_);
         // waypoint_pub_.publish(main_waypoint_);
+    }
+
+    if(waypoint_skip_flag_ == 1 && waypoint_skip_ == 0){
+        ROS_INFO("WAYPOINT SKIP!!!");
+        waypoint_num_msg_.data += 1;
+        waypoint_skip_= 1;
+    }
+
+    if(waypoint_skip_flag_ == 0){
+        waypoint_skip_ = 0;
     }
     
     if(goal_judge_ == 0){
@@ -242,6 +258,11 @@ void StateManager::subWaypointCallback(const geometry_msgs::PoseStamped::ConstPt
 void StateManager::subWaypointStateCallback(const std_msgs::Int16::ConstPtr& msg) {
     sub_waypoint_state_ = msg->data;
     // std::cout << "sub_waypoint_state_ : " << sub_waypoint_state_ << std::endl;
+}
+
+void StateManager::waypointSkipFlagCallback(const std_msgs::Int16::ConstPtr& msg) {
+    waypoint_skip_flag_ = msg->data;
+    // std::cout << "waypoint_num_flag : " << waypoint_num_flag << std::endl;
 }
 
 void StateManager::goalReachedCallback(const std_msgs::Bool::ConstPtr& msg) {
