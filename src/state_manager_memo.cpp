@@ -39,7 +39,6 @@ public:
         goal_judge_sub_ = nh_.subscribe("goal_judge", 1000, &StateManager::goalJudgeCallback, this);
         sub_waypoint_state_sub_ = nh_.subscribe("sub_waypoint_state", 1000, &StateManager::subWaypointStateCallback, this);
         waypoint_skip_flag_sub_ = nh_.subscribe("waypoint_skip_flag", 1000, &StateManager::waypointSkipFlagCallback, this);
-        passed_line_flag_sub_ = nh_.subscribe("passed_line_flag", 1000, &StateManager::passedLineFlagCallback, this);
         timer_callback_ = nh_.createTimer(ros::Duration(1.0), &StateManager::timerCallback, this);
 
         robot_x_ = 0.0;
@@ -67,7 +66,7 @@ private:
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;  // プライベートノードハンドル
 
-    ros::Subscriber waypoint_sub_, waypoint_num_sub_, collision_state_sub_, goal_judge_sub_, main_waypoint_sub_, sub_waypoint_sub_, sub_waypoint_state_sub_, waypoint_skip_flag_sub_, passed_line_flag_sub_;
+    ros::Subscriber waypoint_sub_, waypoint_num_sub_, collision_state_sub_, goal_judge_sub_, main_waypoint_sub_, sub_waypoint_sub_, sub_waypoint_state_sub_, waypoint_skip_flag_sub_;
     ros::Publisher marker_pub_, waypoint_pub_, waypoint_num_pub_, goal_reached_pub_, robot_speed_pub_;
     ros::Timer timer_callback_;
     ros::Time timer_start_;
@@ -102,7 +101,6 @@ private:
     int waypoint_skip_flag_;
     int waypoint_skip_;
     bool is_timer_start;
-    int passed_line_flag_;
     std::string current_location_;  // 取得したパラメータを格納
 
     void timerCallback(const ros::TimerEvent&);
@@ -116,7 +114,6 @@ private:
     void goalReachedCallback(const std_msgs::Bool::ConstPtr& msg);
     void collisionStateCallback(const std_msgs::Int16::ConstPtr& msg);
     void goalJudgeCallback(const std_msgs::Int16::ConstPtr& msg);
-    void passedLineFlagCallback(const std_msgs::Int16::ConstPtr& msg);
     
 };
 
@@ -197,9 +194,6 @@ void StateManager::waypointManager(){
     if(goal_judge_ == 0){
         waypoint_num_flag = 0;
     }
-    if(passed_line_flag_ == 1){
-        waypoint_num_msg_.data += 1;
-    }
         goal_reached_pub_.publish(goal_reached_msg_);
         waypoint_num_pub_.publish(waypoint_num_msg_);
         waypoint_pub_.publish(main_waypoint_);
@@ -231,7 +225,7 @@ void StateManager::robotSpeedPub(){
         robot_speed_msg.data = 1.0;
     }
     else if(collision_state_ == 1){
-        robot_speed_msg.data = 0.3;
+        robot_speed_msg.data = 0.1;
     }
     else if(collision_state_ == 2){
         robot_speed_msg.data = 0.0;
@@ -281,10 +275,6 @@ void StateManager::collisionStateCallback(const std_msgs::Int16::ConstPtr& msg) 
 
 void StateManager::goalJudgeCallback(const std_msgs::Int16::ConstPtr& msg) {
     goal_judge_ = msg->data;
-}
-
-void StateManager::passedLineFlagCallback(const std_msgs::Int16::ConstPtr& msg) {
-    passed_line_flag_ = msg->data;
 }
 
 int main(int argc, char** argv) {
